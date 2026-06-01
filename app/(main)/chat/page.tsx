@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, Suspense } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -517,7 +517,7 @@ function RightPanel({ participants }: { participants: (User | string)[] }) {
   );
 }
 
-export default function ChatPage() {
+function ChatPageInner() {
   const { data: session }  = useSession();
   const token              = session?.accessToken;
   const myId               = session?.user?.id;
@@ -595,5 +595,13 @@ export default function ChatPage() {
         />
       )}
     </>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense>
+      <ChatPageInner />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
@@ -229,7 +229,7 @@ function SkeletonCard() {
   );
 }
 
-export default function JobsPage() {
+function JobsPageInner() {
   const { data: session } = useSession();
   const token             = session?.accessToken;
   const userId            = session?.user?.id;
@@ -361,5 +361,13 @@ export default function JobsPage() {
         <CreateJobModal token={token} onClose={() => setShowCreate(false)} />
       )}
     </div>
+  );
+}
+
+export default function JobsPage() {
+  return (
+    <Suspense>
+      <JobsPageInner />
+    </Suspense>
   );
 }
