@@ -331,6 +331,7 @@ function ChatWindow({ convId, conv, myId, onBack }: { convId: string; conv?: Con
     const socket = getChatSocket(token);
     socket.emit('sendMessage', { conversationId: convId, senderId: myId, content });
     qc.invalidateQueries({ queryKey: ['conversations'] });
+    qc.invalidateQueries({ queryKey: ['messages', convId] });
     const delay = 1400 + Math.random() * 1800;
     setTyping(true);
     setTimeout(() => {

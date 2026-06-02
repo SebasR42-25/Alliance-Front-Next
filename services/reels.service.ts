@@ -11,8 +11,6 @@ export async function uploadReel(token: string, file: File, caption?: string): P
   const formData = new FormData();
   formData.append('file', file);
   if (caption) formData.append('caption', caption);
-  const res = await client.post<Reel>('/reels', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  const res = await client.post<Reel>('/reels', formData);
   return res.data;
 }

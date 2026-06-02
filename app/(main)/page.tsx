@@ -110,7 +110,7 @@ function AddStoryModal({ token, onClose }: { token: string; onClose: () => void 
       const client = createAuthClient(token);
       const formData = new FormData();
       formData.append('file', file);
-      await client.post('/stories', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      await client.post('/stories', formData);
       qc.invalidateQueries({ queryKey: ['stories'] });
       onClose();
     } catch {
