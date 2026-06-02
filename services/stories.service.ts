@@ -10,9 +10,7 @@ export async function uploadStory(token: string, file: File): Promise<Story> {
   const client   = createAuthClient(token);
   const formData = new FormData();
   formData.append('file', file);
-  const res = await client.post<Story>('/stories', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  const res = await client.post<Story>('/stories', formData);
   return res.data;
 }
 
