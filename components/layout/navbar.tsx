@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import {
@@ -331,9 +332,8 @@ export default function Navbar() {
       <header className="fixed top-0 inset-x-0 z-50 bg-brand-pink/80 backdrop-blur-md border-b border-pink-200 h-16">
         <nav className="max-w-7xl mx-auto h-full px-6 flex items-center justify-between gap-4">
 
-          <Link href="/" className="flex items-center gap-2 shrink-0">
-            <span className="text-xl font-black text-gray-900 tracking-tight">Alliance</span>
-            <span className="text-xl" aria-hidden>🤝</span>
+          <Link href="/" className="flex items-center shrink-0">
+            <Image src="/logo.png" alt="Alliance" width={140} height={40} className="h-10 w-auto object-contain" priority />
           </Link>
 
           <button

@@ -52,9 +52,8 @@ const LEFT_NAV = [
 function LeftSidebar() {
   return (
     <aside className="hidden lg:flex flex-col w-60 shrink-0 gap-2">
-      <div className="flex items-center gap-2 px-3 py-2 mb-2">
-        <span className="text-xl font-black text-gray-900">Alliance</span>
-        <span className="text-xl">🤝</span>
+      <div className="flex items-center px-3 py-2 mb-2">
+        <Image src="/logo.png" alt="Alliance" width={130} height={36} className="h-9 w-auto object-contain" />
       </div>
 
       <div className="relative mb-2">
