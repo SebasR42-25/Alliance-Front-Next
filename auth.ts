@@ -4,7 +4,7 @@ import MicrosoftEntraId from 'next-auth/providers/microsoft-entra-id';
 import Facebook from 'next-auth/providers/facebook';
 import Credentials from 'next-auth/providers/credentials';
 
-const API_URL = process.env.API_URL ?? 'http://localhost:3000/api';
+const API_URL = process.env.API_URL ?? 'https://alliance-back-production.up.railway.app/api';
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [

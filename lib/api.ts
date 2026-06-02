@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { signOut } from 'next-auth/react';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000/api';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://alliance-back-production.up.railway.app/api';
 
 export const api = axios.create({
   baseURL: BASE_URL,

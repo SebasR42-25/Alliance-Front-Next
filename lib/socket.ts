@@ -3,7 +3,7 @@
 
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL ?? 'http://localhost:3000';
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL ?? 'https://alliance-back-production.up.railway.app';
 
 let chatSocket: Socket | null = null;
 let notifSocket: Socket | null = null;
