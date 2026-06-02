@@ -165,9 +165,18 @@ function SearchModal({ onClose }: { onClose: () => void }) {
         {total > 0 && (
           <div className="px-4 py-2.5 border-t border-gray-100 flex items-center justify-between">
             <span className="text-xs text-gray-400">{total} result{total !== 1 ? 's' : ''} found</span>
-            <button onClick={() => navigate(`/jobs?q=${debouncedQ}`)} className="text-xs text-violet-600 font-semibold hover:underline">
-              View all →
-            </button>
+            <div className="flex items-center gap-3">
+              {users.length > 0 && (
+                <button onClick={() => navigate('/networking')} className="text-xs text-violet-600 font-semibold hover:underline">
+                  People →
+                </button>
+              )}
+              {jobs.length > 0 && (
+                <button onClick={() => navigate(`/jobs?q=${encodeURIComponent(debouncedQ)}`)} className="text-xs text-violet-600 font-semibold hover:underline">
+                  Jobs →
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>

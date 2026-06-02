@@ -19,11 +19,14 @@ export default function StoryViewer({ stories, initialIndex, onClose }: StoryVie
   const [muted, setMuted]       = useState(true);
   const intervalRef             = useRef<ReturnType<typeof setInterval> | null>(null);
   const videoRef                = useRef<HTMLVideoElement>(null);
+  const advancedRef             = useRef(false);
 
   const story  = stories[current];
   const author = story?.author && typeof story.author === 'object' ? story.author as User : null;
 
   const goNext = useCallback(() => {
+    if (advancedRef.current) return;
+    advancedRef.current = true;
     if (current < stories.length - 1) {
       setCurrent((c) => c + 1);
       setProgress(0);
@@ -40,6 +43,7 @@ export default function StoryViewer({ stories, initialIndex, onClose }: StoryVie
   };
 
   useEffect(() => {
+    advancedRef.current = false;
     setProgress(0);
     if (videoRef.current) {
       videoRef.current.currentTime = 0;
@@ -77,11 +81,11 @@ export default function StoryViewer({ stories, initialIndex, onClose }: StoryVie
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black"
+      className="fixed inset-0 z-100 flex items-center justify-center bg-black"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-sm h-full max-h-[100dvh] flex flex-col"
+        className="relative w-full max-w-sm h-full max-h-dvh flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="absolute top-0 inset-x-0 z-10 flex gap-1 px-3 pt-3">

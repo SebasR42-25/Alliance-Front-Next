@@ -9,6 +9,7 @@ import {
   Plus, X, Upload, Briefcase, MapPin, Tag, Building2,
   Music2,
 } from 'lucide-react';
+import Link from 'next/link';
 import { getReels, uploadReel } from '@/services/reels.service';
 import { getUsers } from '@/services/users.service';
 import { getCompanies } from '@/services/companies.service';
@@ -72,7 +73,7 @@ function ReelsSidebar({ users }: { users: User[] }) {
           </button>
         );
       })}
-      <button className="text-xs text-violet-600 font-semibold px-3 py-1 hover:underline text-left">See All</button>
+      <Link href="/networking" className="text-xs text-violet-600 font-semibold px-3 py-1 hover:underline text-left">See All</Link>
 
       <hr className="my-3 border-gray-100" />
 
@@ -99,9 +100,10 @@ function ReelsSidebar({ users }: { users: User[] }) {
 }
 
 function ReelCard({ reel, myId }: { reel: Reel; myId?: string }) {
-  const videoRef          = useRef<HTMLVideoElement>(null);
-  const [muted, setMuted] = useState(true);
-  const [liked, setLiked] = useState(false);
+  const videoRef               = useRef<HTMLVideoElement>(null);
+  const [muted, setMuted]      = useState(true);
+  const [liked, setLiked]      = useState(false);
+  const [following, setFollowing] = useState(true);
 
   const authorName   = reel.author && typeof reel.author === 'object' ? (reel.author as User).name : 'User';
   const authorHandle = `@${authorName.toLowerCase().replace(/\s+/g, '_')}`;
@@ -120,8 +122,15 @@ function ReelCard({ reel, myId }: { reel: Reel; myId?: string }) {
           <span className="text-sm font-bold text-gray-900">{authorName}</span>
           <span className="text-xs text-violet-500 ml-1.5">{authorHandle}</span>
         </div>
-        <button className="text-xs font-bold text-gray-600 border border-gray-300 px-3 py-1 rounded-full hover:bg-gray-50 transition-colors">
-          Following
+        <button
+          onClick={() => setFollowing((f) => !f)}
+          className={`text-xs font-bold px-3 py-1 rounded-full transition-colors ${
+            following
+              ? 'text-gray-600 border border-gray-300 hover:bg-gray-50'
+              : 'text-violet-600 border border-violet-300 hover:bg-violet-50'
+          }`}
+        >
+          {following ? 'Following' : 'Follow'}
         </button>
       </div>
 
@@ -132,7 +141,7 @@ function ReelCard({ reel, myId }: { reel: Reel; myId?: string }) {
       </p>
 
       <div className="flex items-end gap-4">
-        <div className="relative bg-black rounded-2xl overflow-hidden shrink-0" style={{ width: 320, height: 420 }}>
+        <div className="relative bg-black rounded-2xl overflow-hidden shrink-0 w-full max-w-xs aspect-4/5">
           <video
             ref={videoRef}
             src={reel.videoUrl}
@@ -204,7 +213,7 @@ function PlaceholderCard({ index }: { index: number }) {
       </p>
 
       <div className="flex items-end gap-4">
-        <div className={`relative ${BG[index % BG.length]} rounded-2xl overflow-hidden shrink-0 flex items-center justify-center`} style={{ width: 320, height: 420 }}>
+        <div className={`relative ${BG[index % BG.length]} rounded-2xl overflow-hidden shrink-0 flex items-center justify-center w-full max-w-xs aspect-4/5`}>
           <div className="text-white/20 text-6xl font-black">▶</div>
           <div className="absolute bottom-3 right-3 p-1.5 bg-black/40 rounded-full text-white/60">
             <VolumeX size={14} />

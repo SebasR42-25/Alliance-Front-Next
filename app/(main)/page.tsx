@@ -45,7 +45,7 @@ const LEFT_NAV = [
   { label: 'Feed',          icon: BarChart2,  badge: 19, href: '/'           },
   { label: 'Stories',       icon: BookOpen,   badge: 0,  href: '/reels'      },
   { label: 'Friends',       icon: Users,      badge: 3,  href: '/networking' },
-  { label: 'Settings',      icon: Settings,   badge: 0,  href: '#'           },
+  { label: 'Settings',      icon: Settings,   badge: 0,  href: '/profile'    },
   { label: 'Help & Support',icon: HelpCircle, badge: 0,  href: '/help'       },
 ];
 
@@ -160,7 +160,7 @@ function AddStoryModal({ token, onClose }: { token: string; onClose: () => void 
 
 const STORY_COLORS = ['bg-pink-200','bg-violet-200','bg-blue-200','bg-green-200','bg-yellow-200','bg-orange-200','bg-teal-200','bg-rose-200'];
 
-function StoriesBar({ stories, token }: { stories: Story[]; token?: string }) {
+function StoriesBar({ stories, token, userId }: { stories: Story[]; token?: string; userId?: string }) {
   const [showAddStory, setShowAddStory]   = useState(false);
   const [viewerIndex,  setViewerIndex]    = useState<number | null>(null);
 
@@ -191,12 +191,13 @@ function StoriesBar({ stories, token }: { stories: Story[]; token?: string }) {
       <div className="flex gap-4 overflow-x-auto pb-1 scrollbar-none">
         {addBtn}
         {stories.map((s, idx) => {
-          const author = s.author && typeof s.author === 'object' ? s.author as User : null;
-          const name   = author?.name ?? 'User';
-          const pic    = author?.profilePicture;
+          const author    = s.author && typeof s.author === 'object' ? s.author as User : null;
+          const name      = author?.name ?? 'User';
+          const pic       = author?.profilePicture;
+          const isViewed  = userId ? (s.viewedBy?.includes(userId) ?? false) : false;
           return (
             <button key={s._id} onClick={() => setViewerIndex(idx)} className="flex flex-col items-center gap-1 shrink-0 group">
-              <div className={`w-12 h-12 rounded-full ring-2 ring-violet-400 ring-offset-2 overflow-hidden flex items-center justify-center group-hover:ring-violet-600 transition-all ${!pic ? STORY_COLORS[idx % STORY_COLORS.length] : ''}`}>
+              <div className={`w-12 h-12 rounded-full ring-2 ${isViewed ? 'ring-gray-300' : 'ring-violet-400'} ring-offset-2 overflow-hidden flex items-center justify-center group-hover:ring-violet-600 transition-all ${!pic ? STORY_COLORS[idx % STORY_COLORS.length] : ''}`}>
                 {pic ? <img src={pic} alt={name} className="w-full h-full object-cover" /> : <span className="text-sm font-bold text-gray-700">{name.charAt(0).toUpperCase()}</span>}
               </div>
               <span className="text-[10px] text-gray-500 truncate w-12 text-center">{name.split(' ')[0]}</span>
@@ -264,10 +265,11 @@ function CreatePostModal({ token, onClose }: { token: string; onClose: () => voi
   );
 }
 
-function PostCard({ post, token }: { post: Post; token?: string }) {
+function PostCard({ post, token, userId }: { post: Post; token?: string; userId?: string }) {
   const qc = useQueryClient();
   const [commentText,   setCommentText]   = useState('');
   const [showComments, setShowComments] = useState(false);
+  const hasLiked = userId ? (post.likes?.includes(userId) ?? false) : false;
 
   const likeMutation = useMutation({
     mutationFn: () => toggleLike(token!, post._id),
@@ -313,14 +315,28 @@ function PostCard({ post, token }: { post: Post; token?: string }) {
 
       <div className="flex items-center gap-1 px-3 py-2 border-t border-gray-100">
         <button onClick={() => token && likeMutation.mutate()} disabled={!token}
-          className="flex items-center gap-1.5 flex-1 justify-center py-1.5 rounded-xl hover:bg-gray-50 text-sm text-gray-500 hover:text-violet-600 transition-colors disabled:opacity-40">
-          <ThumbsUp size={16} strokeWidth={1.8} /> Like
+          className={`flex items-center gap-1.5 flex-1 justify-center py-1.5 rounded-xl hover:bg-gray-50 text-sm transition-colors disabled:opacity-40 ${
+            hasLiked ? 'text-violet-600 font-semibold' : 'text-gray-500 hover:text-violet-600'
+          }`}>
+          <ThumbsUp size={16} strokeWidth={hasLiked ? 2.2 : 1.8} className={hasLiked ? 'fill-violet-100' : ''} /> Like
         </button>
         <button onClick={() => setShowComments(!showComments)}
           className="flex items-center gap-1.5 flex-1 justify-center py-1.5 rounded-xl hover:bg-gray-50 text-sm text-gray-500 hover:text-violet-600 transition-colors">
           <MessageCircle size={16} strokeWidth={1.8} /> Comment
         </button>
-        <button className="flex items-center gap-1.5 flex-1 justify-center py-1.5 rounded-xl hover:bg-gray-50 text-sm text-gray-500 hover:text-violet-600 transition-colors">
+        <button
+          onClick={() => {
+            const url = `${window.location.origin}/#post-${post._id}`;
+            if (navigator.share) {
+              navigator.share({ title: authorName, text: post.content.slice(0, 100), url });
+            } else {
+              navigator.clipboard.writeText(url).then(() =>
+                showToast({ message: 'Link copied to clipboard', type: 'success' })
+              );
+            }
+          }}
+          className="flex items-center gap-1.5 flex-1 justify-center py-1.5 rounded-xl hover:bg-gray-50 text-sm text-gray-500 hover:text-violet-600 transition-colors"
+        >
           <Share2 size={16} strokeWidth={1.8} /> Share
         </button>
         <button className="p-1.5 rounded-xl hover:bg-gray-50 text-gray-400 hover:text-gray-600 transition-colors">
@@ -331,7 +347,7 @@ function PostCard({ post, token }: { post: Post; token?: string }) {
       {showComments && (
         <div className="px-4 pb-4 border-t border-gray-100 pt-3 flex flex-col gap-2">
           {post.comments?.slice(-3).map((c, i) => (
-            <div key={i} className="flex gap-2">
+            <div key={c._id ?? i} className="flex gap-2">
               <UserAvatar user={typeof c.user === 'object' ? c.user : undefined} size={28} />
               <div className="bg-gray-50 rounded-xl px-3 py-1.5 text-xs text-gray-700 flex-1">
                 <span className="font-semibold">{c.user && typeof c.user === 'object' ? c.user.name : 'Usuario'}</span>{' '}{c.text}
@@ -401,7 +417,7 @@ function NewsCard({ article }: { article: NewsArticle }) {
   );
 }
 
-function RightSidebar({ users, jobs, news }: { users: User[]; jobs: Job[]; news: NewsArticle[] }) {
+function RightSidebar({ users, jobs, news, token }: { users: User[]; jobs: Job[]; news: NewsArticle[]; token?: string }) {
   return (
     <aside className="hidden xl:flex flex-col w-72 shrink-0 gap-4">
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
@@ -424,9 +440,7 @@ function RightSidebar({ users, jobs, news }: { users: User[]; jobs: Job[]; news:
                     <p className="text-xs font-semibold text-gray-800 truncate">{u.name}</p>
                     <p className="text-[10px] text-gray-400 truncate">{u.bio ?? `@${u.name.toLowerCase().replace(/\s+/g, '')}`}</p>
                   </div>
-                  <button className="text-[10px] font-bold text-violet-600 border border-violet-200 px-2 py-0.5 rounded-full hover:bg-violet-50 transition-colors shrink-0 flex items-center gap-0.5">
-                    <UserPlus size={9} /> Add
-                  </button>
+                  <ConnectButton user={u} token={token} />
                 </div>
               ))
           }
@@ -571,7 +585,8 @@ function FeedNewsBanner({ news }: { news: NewsArticle[] }) {
   );
 }
 
-function ConnectButton({ user, token, qc }: { user: User; token?: string; qc: ReturnType<typeof useQueryClient> }) {
+function ConnectButton({ user, token }: { user: User; token?: string }) {
+  const qc = useQueryClient();
   const mutation = useMutation({
     mutationFn: () => sendConnectionRequest(token!, user._id),
     onSuccess:  () => {
@@ -591,7 +606,6 @@ function ConnectButton({ user, token, qc }: { user: User; token?: string; qc: Re
 }
 
 function PeopleYouMayKnow({ users, token }: { users: User[]; token?: string }) {
-  const qc = useQueryClient();
   if (users.length < 3) return null;
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
@@ -612,7 +626,7 @@ function PeopleYouMayKnow({ users, token }: { users: User[]; token?: string }) {
               <p className="text-xs font-bold text-gray-900 truncate">{u.name}</p>
               {u.bio && <p className="text-[10px] text-gray-400 truncate">{u.bio}</p>}
             </div>
-            <ConnectButton user={u} token={token} qc={qc} />
+            <ConnectButton user={u} token={token} />
           </div>
         ))}
       </div>
@@ -624,8 +638,15 @@ export default function FeedPage() {
   const { data: session }  = useSession();
   const token              = session?.accessToken;
   const [showPostModal, setShowPostModal] = useState(false);
+  const [feedSearch, setFeedSearch]       = useState('');
 
-  const { data: posts = [],   isLoading: loadingPosts }   = useQuery({ queryKey: ['posts'],   queryFn: getPosts,    staleTime: 30_000 });
+  const { data: rawPosts = [], isLoading: loadingPosts }   = useQuery({ queryKey: ['posts'],   queryFn: getPosts,    staleTime: 30_000 });
+  const posts = feedSearch
+    ? rawPosts.filter((p) =>
+        p.content.toLowerCase().includes(feedSearch.toLowerCase()) ||
+        (typeof p.author === 'object' && p.author.name?.toLowerCase().includes(feedSearch.toLowerCase()))
+      )
+    : rawPosts;
   const { data: stories = [],  isLoading: loadingStories } = useQuery({ queryKey: ['stories'], queryFn: getStories,  staleTime: 60_000 });
   const { data: jobs = [] }     = useQuery({ queryKey: ['jobs'],   queryFn: () => getJobs(),   staleTime: 120_000 });
   const { data: news = [] }     = useQuery({ queryKey: ['news'],   queryFn: getTechNews,        staleTime: 300_000 });
@@ -644,8 +665,18 @@ export default function FeedPage() {
         <div className="flex items-center gap-3">
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input type="text" placeholder="Search for friends, groups, pages"
-              className="w-full bg-white border border-gray-200 rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-300 shadow-sm" />
+            <input
+              type="text"
+              placeholder="Search posts or people…"
+              value={feedSearch}
+              onChange={(e) => setFeedSearch(e.target.value)}
+              className="w-full bg-white border border-gray-200 rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-violet-300 shadow-sm"
+            />
+            {feedSearch && (
+              <button onClick={() => setFeedSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <X size={14} />
+              </button>
+            )}
           </div>
           <button onClick={() => token ? setShowPostModal(true) : undefined}
             className="flex items-center gap-2 bg-brand-lime text-gray-900 font-bold text-sm px-4 py-2.5 rounded-xl hover:brightness-95 transition-all shrink-0">
@@ -661,7 +692,7 @@ export default function FeedPage() {
                   <div className="w-12 h-12 rounded-full bg-gray-200 ring-2 ring-gray-100 ring-offset-2" />
                   <div className="w-10 h-2 bg-gray-200 rounded" />
                 </div>))}</div>
-            : <StoriesBar stories={stories} token={token} />
+            : <StoriesBar stories={stories} token={token} userId={session?.user?.id} />
           }
         </div>
 
@@ -680,7 +711,7 @@ export default function FeedPage() {
             ))
           : posts.map((post, idx) => (
               <Fragment key={post._id}>
-                <PostCard post={post} token={token} />
+                <PostCard post={post} token={token} userId={session?.user?.id} />
                 {idx === 1 && <FeedJobsBanner jobs={jobs} />}
               </Fragment>
             ))
@@ -701,7 +732,7 @@ export default function FeedPage() {
         <FeedNewsBanner news={news} />
       </main>
 
-      <RightSidebar users={networkUsers} jobs={jobs} news={news} />
+      <RightSidebar users={networkUsers} jobs={jobs} news={news} token={token} />
 
       {showPostModal && token && <CreatePostModal token={token} onClose={() => setShowPostModal(false)} />}
     </div>

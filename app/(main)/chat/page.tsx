@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Search, Plus, Phone, Paperclip, Send,
-  FileText, Image as ImageIcon, X, Users,
+  FileText, Image as ImageIcon, X, Users, ChevronDown, ArrowLeft,
 } from 'lucide-react';
 import { getConversations, getMessages, createConversation } from '@/services/chat.service';
 import { getUsers } from '@/services/users.service';
@@ -248,14 +248,16 @@ type LocalMsg = {
   ts:        string;
 };
 
-function ChatWindow({ convId, conv, myId }: { convId: string; conv?: Conversation; myId?: string }) {
+function ChatWindow({ convId, conv, myId, onBack }: { convId: string; conv?: Conversation; myId?: string; onBack?: () => void }) {
   const { data: session } = useSession();
   const token             = session?.accessToken;
   const qc                = useQueryClient();
   const [text, setText]     = useState('');
   const [localMsgs, setLocalMsgs] = useState<LocalMsg[]>([]);
-  const [typing, setTyping]       = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const [typing, setTyping]         = useState(false);
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const bottomRef  = useRef<HTMLDivElement>(null);
+  const scrollRef  = useRef<HTMLDivElement>(null);
 
   const other = conv ? getOtherParticipant(conv, myId) : null;
 
@@ -268,9 +270,25 @@ function ChatWindow({ convId, conv, myId }: { convId: string; conv?: Conversatio
     staleTime: 10_000,
   });
 
+  // Always jump to bottom when switching conversation
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [dbMessages, localMsgs, typing, convId]);
+    bottomRef.current?.scrollIntoView({ behavior: 'instant' });
+    setShowScrollBtn(false);
+  }, [convId]);
+
+  // Auto-scroll on new messages only when already near bottom
+  useEffect(() => {
+    if (!scrollRef.current) return;
+    const el = scrollRef.current;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    if (atBottom) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [dbMessages, localMsgs, typing]);
+
+  function handleScroll() {
+    const el = scrollRef.current;
+    if (!el) return;
+    setShowScrollBtn(el.scrollHeight - el.scrollTop - el.clientHeight > 80);
+  }
 
   const convIdRef = useRef(convId);
   useEffect(() => { convIdRef.current = convId; }, [convId]);
@@ -340,9 +358,14 @@ function ChatWindow({ convId, conv, myId }: { convId: string; conv?: Conversatio
   }
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+    <div className="flex-1 flex flex-col overflow-hidden relative">
       <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 shrink-0">
         <div className="flex items-center gap-3">
+          {onBack && (
+            <button onClick={onBack} className="md:hidden p-1.5 hover:bg-gray-100 rounded-lg transition-colors mr-1">
+              <ArrowLeft size={18} className="text-gray-600" />
+            </button>
+          )}
           <div className="w-9 h-9 rounded-full bg-linear-to-br from-violet-200 to-pink-200 flex items-center justify-center text-violet-700 font-bold text-sm overflow-hidden">
             {other?.profilePicture
               ? <img src={other.profilePicture} alt={other.name} className="w-full h-full object-cover" />
@@ -360,7 +383,7 @@ function ChatWindow({ convId, conv, myId }: { convId: string; conv?: Conversatio
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-2">
+      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-2">
         {isLoading && Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className={`flex ${i % 2 === 0 ? 'justify-start' : 'justify-end'} animate-pulse`}>
             <div className={`h-8 rounded-2xl ${i % 2 === 0 ? 'bg-gray-200 w-40' : 'bg-violet-100 w-32'}`} />
@@ -390,7 +413,13 @@ function ChatWindow({ convId, conv, myId }: { convId: string; conv?: Conversatio
           );
         })}
 
-        {localMsgs.map((m) => (
+        {localMsgs.filter((lm) => {
+          if (!lm.isMe) return true;
+          return !dbMessages.some((m) => {
+            const senderId = typeof m.sender === 'object' ? (m.sender as User)._id : m.sender;
+            return String(senderId) === String(myId) && m.content === lm.content;
+          });
+        }).map((m) => (
           <div key={m.id} className={`flex ${m.isMe ? 'justify-end' : 'justify-start'} gap-2`}>
             {!m.isMe && (
               <div className="w-7 h-7 rounded-full bg-pink-200 flex items-center justify-center text-xs font-bold text-pink-700 shrink-0 self-end overflow-hidden">
@@ -428,6 +457,16 @@ function ChatWindow({ convId, conv, myId }: { convId: string; conv?: Conversatio
 
         <div ref={bottomRef} />
       </div>
+
+      {showScrollBtn && (
+        <button
+          onClick={() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' })}
+          className="absolute bottom-16 right-5 w-8 h-8 bg-violet-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-violet-700 transition-colors z-10"
+          title="Scroll to latest"
+        >
+          <ChevronDown size={16} />
+        </button>
+      )}
 
       <div className="px-4 py-3 border-t border-gray-100 flex items-center gap-2 shrink-0">
         <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400">
@@ -490,7 +529,7 @@ function RightPanel({ participants }: { participants: (User | string)[] }) {
       <div className="px-4 py-3">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-xs font-bold text-gray-900">Files</h3>
-          <span className="text-xs text-gray-400 font-semibold">125</span>
+          <span className="text-xs text-gray-400 font-semibold">{MOCK_FILES.length}</span>
         </div>
         <div className="flex flex-col gap-2">
           {MOCK_FILES.map((f) => (
@@ -523,8 +562,14 @@ function ChatPageInner() {
   const myId               = session?.user?.id;
   const router             = useRouter();
   const searchParams       = useSearchParams();
-  const [selectedConv, setSelectedConv] = useState('');
-  const [showNewChat, setShowNewChat]   = useState(false);
+  const [selectedConv, setSelectedConv]   = useState('');
+  const [showNewChat, setShowNewChat]     = useState(false);
+  const [mobileView, setMobileView]       = useState<'list' | 'chat'>('list');
+
+  const handleSelectConv = (id: string) => {
+    setSelectedConv(id);
+    setMobileView('chat');
+  };
 
   const { data: conversations = [], isLoading } = useQuery({
     queryKey:  ['conversations'],
@@ -574,16 +619,27 @@ function ChatPageInner() {
         className="max-w-7xl mx-auto flex bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
         style={{ height: 'calc(100vh - 5rem)' }}
       >
-        <ConversationList
-          conversations={conversations}
-          selected={selectedConv}
-          onSelect={setSelectedConv}
-          onNewChat={() => setShowNewChat(true)}
-          myId={myId}
-          isLoading={isLoading}
-        />
-        <ChatWindow convId={selectedConv} conv={selectedConvObj} myId={myId} />
-        <RightPanel participants={selectedConvObj?.participants ?? []} />
+        <div className={`${mobileView === 'chat' ? 'hidden md:flex' : 'flex'} w-full md:w-64 shrink-0`}>
+          <ConversationList
+            conversations={conversations}
+            selected={selectedConv}
+            onSelect={handleSelectConv}
+            onNewChat={() => setShowNewChat(true)}
+            myId={myId}
+            isLoading={isLoading}
+          />
+        </div>
+        <div className={`${mobileView === 'list' ? 'hidden md:flex' : 'flex'} flex-1 min-w-0`}>
+          <ChatWindow
+            convId={selectedConv}
+            conv={selectedConvObj}
+            myId={myId}
+            onBack={() => setMobileView('list')}
+          />
+        </div>
+        <div className="hidden xl:flex w-56 shrink-0">
+          <RightPanel participants={selectedConvObj?.participants ?? []} />
+        </div>
       </div>
 
       {showNewChat && token && (

@@ -292,7 +292,7 @@ function JobsPageInner() {
           )}
         </div>
 
-        <div className="flex gap-3">
+        <form className="flex gap-3" onSubmit={(e) => e.preventDefault()}>
           <div className="relative flex-1">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -303,10 +303,10 @@ function JobsPageInner() {
               className="w-full bg-white rounded-xl pl-9 pr-4 py-3 text-sm outline-none focus:ring-2 focus:ring-violet-300 shadow-sm"
             />
           </div>
-          <button className="bg-brand-lime text-gray-900 font-bold px-6 py-3 rounded-xl hover:brightness-95 transition-all text-sm">
+          <button type="submit" className="bg-brand-lime text-gray-900 font-bold px-6 py-3 rounded-xl hover:brightness-95 transition-all text-sm">
             Search
           </button>
-        </div>
+        </form>
       </div>
 
       {activeCompany && (

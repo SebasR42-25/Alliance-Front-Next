@@ -127,8 +127,9 @@ function BasicInfoModal({ user, token, onClose }: { user: User; token: string; o
 
 function SkillsModal({ user, token, onClose }: { user: User; token: string; onClose: () => void }) {
   const qc = useQueryClient();
-  const [skills, setSkills] = useState<string[]>(user.skills ?? []);
-  const [input, setInput]   = useState('');
+  const [skills, setSkills]       = useState<string[]>(user.skills ?? []);
+  const [input, setInput]         = useState('');
+  const [dupError, setDupError]   = useState(false);
 
   const mutation = useMutation({
     mutationFn: () => updateMe(token, { skills }),
@@ -141,8 +142,15 @@ function SkillsModal({ user, token, onClose }: { user: User; token: string; onCl
 
   const addSkill = () => {
     const s = input.trim();
-    if (s && !skills.includes(s)) setSkills([...skills, s]);
+    if (!s) return;
+    if (skills.includes(s)) {
+      setDupError(true);
+      setTimeout(() => setDupError(false), 2000);
+      return;
+    }
+    setSkills([...skills, s]);
     setInput('');
+    setDupError(false);
   };
 
   const removeSkill = (s: string) => setSkills(skills.filter((x) => x !== s));
@@ -162,6 +170,9 @@ function SkillsModal({ user, token, onClose }: { user: User; token: string; onCl
           <Plus size={18} className="text-gray-900" />
         </button>
       </div>
+      {dupError && (
+        <p className="text-xs text-orange-500 font-semibold -mt-2 mb-1 px-1">That skill is already in your list.</p>
+      )}
       <div className="flex flex-wrap gap-2 min-h-15 bg-gray-50 rounded-xl p-3 mb-5">
         {skills.length === 0 && <span className="text-xs text-gray-400">No skills yet. Type one above and press Enter.</span>}
         {skills.map((s) => (

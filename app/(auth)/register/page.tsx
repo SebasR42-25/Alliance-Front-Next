@@ -128,7 +128,10 @@ export default function RegisterPage() {
           disabled={loading}
           className="w-full bg-brand-lime text-gray-900 font-black py-3 rounded-xl text-sm tracking-widest hover:brightness-95 transition-all disabled:opacity-60 mt-2"
         >
-          {loading ? '...' : 'CONTINUAR'}
+          {loading
+            ? <span className="flex items-center justify-center gap-2"><span className="w-4 h-4 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />Creando cuenta…</span>
+            : 'CONTINUAR'
+          }
         </button>
       </form>
 
